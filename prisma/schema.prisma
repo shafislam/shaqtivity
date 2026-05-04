@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  saveCode      String   @unique @default(cuid())
+  playerName    String
+  avatarUrl     String   @default("/avatar_front.png")
+  level         Int      @default(1)
+  effortXp      Int      @default(0)
+  startingClass String
+  environment   String
+  createdAt     DateTime @default(now())
+
+  stats       UserStat[]
+  preferences UserPreference[]
+  sessions    Session[]
+}
+
+model UserStat {
+  id          String   @id @default(uuid())
+  userId      String
+  muscleGroup String
+  powerLevel  Int
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, muscleGroup])
+}
+
+model UserPreference {
+  id        String  @id @default(uuid())
+  userId    String
+  type      String // "ACTIVITY" or "EXERCISE"
+  name      String
+  isEnabled Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, name])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  sessionDate  DateTime
+  status       String // "COMPLETED", "MISSED", "EXCUSE"
+  excuseReason String?
+  createdAt    DateTime @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises SessionExercise[]
+
+  @@unique([userId, sessionDate])
+}
+
+model SessionExercise {
+  id           String @id @default(uuid())
+  sessionId    String
+  exerciseName String
+  targetMuscle String
+
+  session Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sets    SessionSet[]
+}
+
+model SessionSet {
+  id                String  @id @default(uuid())
+  sessionExerciseId String
+  setNumber         Int
+  reps              Int?
+  targetReps        Int?
+  weight            Float?
+  minutes           Int?
+  targetMinutes     Int?
+  isCompleted       Boolean @default(false)
+
+  exercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+}

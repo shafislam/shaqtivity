@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-color: #0d0e15;
+  --panel-bg: #1c1d2c;
+  --panel-border: #333652;
+  --text-main: #ffffff;
+  --text-muted: #8b93af;
+  --accent-green: #4ade80;
+  --accent-orange: #fb923c;
+  --accent-blue: #38bdf8;
+  --accent-yellow: #facc15;
+  --btn-bg: #2d3748;
+  --shadow-color: #000000;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Press Start 2P', monospace;
+  user-select: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  font-size: 8px;
+  /* Base for retro font */
+  background-color: #050508;
+  background-image:
+    linear-gradient(#151525 2px, transparent 2px),
+    linear-gradient(90deg, #151525 2px, transparent 2px);
+  background-size: 40px 40px;
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Mobile Simulator wrapper */
+#root {
+  width: 100vw;
+  height: 100vh;
+  max-width: 400px;
+  max-height: 850px;
+  margin: auto;
+  border: 2px solid #222;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+/* Retro Header */
+.header {
+  text-align: center;
+  padding: 15px 10px;
+  background-color: var(--panel-bg);
+  border-bottom: 4px solid var(--panel-border);
+  color: var(--accent-blue);
+  font-size: 14px;
+  text-shadow: 2px 2px 0 var(--shadow-color);
+  letter-spacing: 1px;
+}
+
+/* Main Content Area */
+.content-area {
+  flex: 1;
+  overflow: hidden;
+  padding: 10px;
+  background-color: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Retro Panel Components */
+.panel {
+  background-color: var(--panel-bg);
+  border: 4px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  position: relative;
+  margin-top: 10px;
+}
+
+.panel-title {
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  background-color: var(--bg-color);
+  padding: 0 5px;
+  font-size: 10px;
+  color: white;
+}
+
+/* Tab Bar Navigation */
+.tab-bar {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--panel-bg);
+  padding: 10px 0 15px 0;
+  border-top: 4px solid var(--panel-border);
+  box-shadow: 0 -4px 0 var(--shadow-color);
+  z-index: 10;
+}
+
+.tab-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  transition: transform 0.1s;
+}
+
+.tab-button:active {
+  transform: translateY(2px);
+}
+
+.tab-button.active {
+  color: var(--accent-green);
+  text-shadow: 1px 1px 0 var(--shadow-color);
+}
+
+.tab-icon {
+  font-size: 18px;
+}
+
+/* Base buttons */
+.retro-btn {
+  background-color: var(--btn-bg);
+  color: var(--text-main);
+  border: 4px solid var(--panel-border);
+  padding: 12px;
+  font-size: 10px;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  width: 100%;
+}
+
+.retro-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.btn-primary {
+  background-color: var(--accent-green);
+  color: var(--shadow-color);
+  border-color: var(--shadow-color);
+}
+
+.btn-warning {
+  background-color: var(--accent-orange);
+  color: var(--shadow-color);
+  border-color: var(--shadow-color);
+}
+
+.btn-action {
+  background-color: var(--accent-blue);
+  color: var(--shadow-color);
+  border-color: var(--shadow-color);
+}
+
+/* Logger specific */
+.logger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  margin-bottom: 15px;
+  background-color: var(--panel-bg);
+  border: 4px solid var(--panel-border);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+  border-radius: 4px;
+}
+
+.logger-row.completed {
+  opacity: 0.5;
+  border-color: var(--accent-green);
+}
+
+.adjust-btn {
+  background-color: var(--accent-orange);
+  border: 2px solid var(--shadow-color);
+  color: var(--shadow-color);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--shadow-color);
+}
+
+.adjust-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.checkbox-btn {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--text-muted);
+  background-color: var(--bg-color);
+  box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.checkbox-btn.checked {
+  background-color: var(--accent-green);
+  border-color: var(--shadow-color);
+  box-shadow: 4px 4px 0 var(--shadow-color);
+}
+
+/* Modals */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(13, 14, 21, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modal-content {
+  width: 90%;
+  background-color: var(--panel-bg);
+  border: 4px solid var(--accent-blue);
+  box-shadow: 8px 8px 0 var(--shadow-color);
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Helpers */
+.text-center {
+  text-align: center;
+}
+
+.text-orange {
+  color: var(--accent-orange);
+}
+
+.text-green {
+  color: var(--accent-green);
+}
+
+.text-blue {
+  color: var(--accent-blue);
+}
+
+.text-yellow {
+  color: var(--accent-yellow);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}

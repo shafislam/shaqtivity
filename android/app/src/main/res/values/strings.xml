@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SHAQTIVITY</string>
+    <string name="title_activity_main">SHAQTIVITY</string>
+    <string name="package_name">com.shafinislam.shaqtivity</string>
+    <string name="custom_url_scheme">com.shafinislam.shaqtivity</string>
+</resources>
