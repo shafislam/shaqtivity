@@ -139,7 +139,7 @@ export default function App() {
 
   return (
     <>
-      <div className="header" style={{ fontSize: '18px', padding: '15px' }}>SHAQTIVITY</div>
+      <div className="header" style={{ fontSize: '14px', letterSpacing: '1px', paddingTop: 'env(safe-area-inset-top, 40px)' }}>SHAQTIVITY</div>
       <div className="content-area" style={{ overflow: 'hidden' }}>
         {renderTab()}
       </div>
@@ -160,10 +160,77 @@ export default function App() {
   )
 }
 
+function RetroKeyboard({ onKey, onBackspace, onConfirm }) {
+  const keys = [
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+    ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+  ];
+
+  return (
+    <div style={{ background: '#1a1a2e', padding: '10px', display: 'flex', flexDirection: 'column', gap: '5px', width: '100%', borderTop: '2px solid #333' }}>
+      {keys.map((row, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
+          {row.map(key => (
+            <button
+              key={key}
+              onClick={() => onKey(key)}
+              style={{
+                flex: 1,
+                maxWidth: '35px',
+                height: '40px',
+                background: '#2d3748',
+                color: 'white',
+                border: '2px solid #444',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                boxShadow: '2px 2px 0 #000'
+              }}
+            >
+              {key}
+            </button>
+          ))}
+          {i === 3 && (
+            <button
+              onClick={onBackspace}
+              style={{
+                padding: '0 10px',
+                height: '40px',
+                background: '#e53e3e',
+                color: 'white',
+                border: '2px solid #444',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontFamily: 'inherit',
+                boxShadow: '2px 2px 0 #000'
+              }}
+            >
+              DEL
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LoginScreen({ onLoginSuccess, onStartNewGame }) {
   const [saveCode, setSaveCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleKey = (key) => {
+    if (saveCode.length < 6) setSaveCode(prev => prev + key);
+  };
+
+  const handleBackspace = () => {
+    setSaveCode(prev => prev.slice(0, -1));
+  };
 
   const handleLogin = async () => {
     if (saveCode.length < 6) return;
@@ -192,22 +259,32 @@ function LoginScreen({ onLoginSuccess, onStartNewGame }) {
   };
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', gap: '30px', background: '#000' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', color: 'var(--accent-green)', textShadow: '4px 4px 0 #000' }}>SHAQTIVITY</div>
-        <div style={{ fontSize: '10px', color: 'var(--accent-orange)' }}>RPG FITNESS TRACKER</div>
-      </div>
+    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', background: '#000' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', gap: '20px', paddingTop: 'env(safe-area-inset-top, 60px)' }}>
+        <div style={{ textAlign: 'center', width: '100%', padding: '0 20px', marginBottom: '10px' }}>
+          <div style={{ fontSize: '8vw', color: 'var(--accent-green)', textShadow: '4px 4px 0 #000', textAlign: 'center' }}>SHAQTIVITY</div>
+          <div style={{ fontSize: '8px', color: 'var(--accent-orange)', marginTop: '5px' }}>RPG FITNESS TRACKER</div>
+        </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', maxWidth: '300px' }}>
-        <div className="panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+        <div className="panel" style={{ width: '100%', maxWidth: '300px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
           <div style={{ fontSize: '10px', color: 'var(--text-main)' }}>ENTER SAVE CODE</div>
-          <input 
-            value={saveCode}
-            onChange={e => setSaveCode(e.target.value.toUpperCase())}
-            maxLength={6}
-            placeholder="XXXXXX"
-            style={{ background: '#000', border: '2px solid #444', color: 'var(--accent-green)', padding: '10px', width: '100px', textAlign: 'center', fontSize: '16px', outline: 'none', textTransform: 'uppercase' }}
-          />
+          <div style={{ 
+            background: '#000', 
+            border: '2px solid #444', 
+            color: 'var(--accent-green)', 
+            padding: '10px', 
+            width: '160px', 
+            textAlign: 'center', 
+            fontSize: '18px',
+            minHeight: '45px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            letterSpacing: '2px'
+          }}>
+            {saveCode || 'XXXXXX'}
+            <span className="blink" style={{ marginLeft: '2px', borderLeft: '2px solid var(--accent-green)', height: '20px' }}></span>
+          </div>
           {error && <div style={{ color: 'red', fontSize: '8px' }}>{error}</div>}
           <button 
             onClick={handleLogin}
@@ -219,12 +296,12 @@ function LoginScreen({ onLoginSuccess, onStartNewGame }) {
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', fontSize: '10px', color: '#666' }}>- OR -</div>
-
-        <button onClick={onStartNewGame} className="retro-btn btn-warning" style={{ width: '100%' }}>
+        <button onClick={onStartNewGame} className="retro-btn btn-warning" style={{ width: '100%', maxWidth: '300px' }}>
           NEW GAME
         </button>
       </div>
+
+      <RetroKeyboard onKey={handleKey} onBackspace={handleBackspace} onConfirm={handleLogin} />
     </div>
   );
 }
@@ -310,8 +387,12 @@ function OnboardingScreen({ setGameState, onComplete, onCancel }) {
   const [environment, setEnvironment] = useState(null);
   const [selectedAvatar, setSelectedAvatar] = useState('/avatars/male/male_01.png');
   const [avatarFilter, setAvatarFilter] = useState('male');
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [onboardingError, setOnboardingError] = useState('');
 
   const completeOnboarding = async () => {
+    setIsFinishing(true);
+    setOnboardingError('');
     try {
       const response = await fetch(`${API_BASE}/api/user`, {
         method: 'POST',
@@ -324,38 +405,65 @@ function OnboardingScreen({ setGameState, onComplete, onCancel }) {
           avatarUrl: selectedAvatar
         })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`SERVER ERROR: ${response.status} - ${errorText.substring(0, 50)}`);
+      }
+      
       const data = await response.json();
       onComplete(data.saveCode);
     } catch (err) {
       console.error("Failed to save user to DB:", err);
+      setOnboardingError(err.message.includes('SERVER ERROR') ? err.message : 'NETWORK ERROR. CHECK CONNECTION.');
+      setIsFinishing(false);
     }
   };
 
   const getAvatarsList = (gender) => {
     const list = [];
-    for (let i = 1; i <= 20; i++) {
+    for (let i = 1; i <= 6; i++) {
       list.push(`/avatars/${gender}/${gender}_${i.toString().padStart(2, '0')}.png`);
     }
     return list;
   };
 
   return (
-    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text-main)', padding: '20px' }}>
-      <div className="header" style={{ fontSize: '14px', marginBottom: '20px', border: 'none', background: 'transparent' }}>NEW GAME+</div>
+    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color)', color: 'var(--text-main)' }}>
+      <div className="header" style={{ fontSize: '14px', borderBottom: '4px solid var(--panel-border)', background: 'var(--panel-bg)' }}>NEW GAME+</div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px', minHeight: 0 }}>
       
       {step === 1 && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '20px' }}>
           <div style={{ fontSize: '10px', color: 'var(--accent-orange)', textAlign: 'center' }}>ENTER PLAYER NAME</div>
-          <input 
-            value={name} 
-            onChange={e => setName(e.target.value.toUpperCase())}
-            maxLength={12}
-            style={{ background: '#000', color: 'var(--accent-green)', border: '4px solid var(--panel-border)', padding: '15px', fontSize: '16px', textAlign: 'center', fontFamily: 'inherit', outline: 'none' }}
+          <div style={{ 
+            background: '#000', 
+            color: 'var(--accent-green)', 
+            border: '4px solid var(--panel-border)', 
+            padding: '15px', 
+            fontSize: '16px', 
+            textAlign: 'center',
+            minHeight: '55px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            {name || '...'}
+            <span className="blink" style={{ marginLeft: '2px', borderLeft: '2px solid var(--accent-green)', height: '20px' }}></span>
+          </div>
+          
+          <div style={{ flex: 1 }}></div>
+          
+          <RetroKeyboard 
+            onKey={(k) => name.length < 12 && setName(prev => prev + k)} 
+            onBackspace={() => setName(prev => prev.slice(0, -1))}
+            onConfirm={() => name && setStep(2)}
           />
+
           <button 
             disabled={!name}
             onClick={() => setStep(2)}
-            className="retro-btn btn-action" style={{ opacity: name ? 1 : 0.5 }}
+            className="retro-btn btn-action" style={{ opacity: name ? 1 : 0.5, marginTop: '10px' }}
           >
             CONFIRM
           </button>
@@ -445,7 +553,15 @@ function OnboardingScreen({ setGameState, onComplete, onCancel }) {
             >FEMALE</button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', padding: '4px' }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)', 
+            gap: '30px', 
+            padding: '10px 40px', 
+            marginTop: '10px', 
+            overflow: 'hidden',
+            justifyItems: 'center'
+          }}>
             {getAvatarsList(avatarFilter).map(url => (
               <div 
                 key={url}
@@ -454,24 +570,36 @@ function OnboardingScreen({ setGameState, onComplete, onCancel }) {
                   background: '#000',
                   border: selectedAvatar === url ? '2px solid var(--accent-green)' : '2px solid #333',
                   borderRadius: '8px',
-                  padding: '4px',
+                  padding: '5px',
                   cursor: 'pointer',
                   aspectRatio: '1/1',
+                  width: '100px',
                   display: 'flex',
                   justifyContent: 'center',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  boxSizing: 'border-box'
                 }}
               >
-                <img src={url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <img src={url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'pixelated' }} />
               </div>
             ))}
           </div>
 
-          <button onClick={completeOnboarding} className="retro-btn btn-action" style={{ marginTop: 'auto' }}>
-            FINISH
-          </button>
+          <div style={{ padding: '10px 0 20px 0', display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
+            {onboardingError && <div style={{ color: 'red', fontSize: '8px', textAlign: 'center' }}>{onboardingError}</div>}
+
+            <button 
+              onClick={completeOnboarding} 
+              disabled={isFinishing}
+              className="retro-btn btn-action" 
+              style={{ padding: '15px', fontSize: '12px', opacity: isFinishing ? 0.7 : 1 }}
+            >
+              {isFinishing ? 'LOADING...' : 'FINISH'}
+            </button>
+          </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
