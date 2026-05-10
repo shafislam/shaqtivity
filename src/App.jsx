@@ -227,8 +227,19 @@ function LoginScreen({ onLoginSuccess, onStartNewGame }) {
 
   useEffect(() => {
     fetch(`${API_BASE}/api/health`)
-      .then(r => r.ok ? setServerStatus('ONLINE') : setServerStatus('OFFLINE'))
-      .catch(() => setServerStatus('OFFLINE'));
+      .then(async r => {
+        if (r.ok) {
+          setServerStatus('ONLINE');
+        } else {
+          const text = await r.text();
+          console.error('Server Status Error:', r.status, text);
+          setServerStatus(`OFFLINE (${r.status})`);
+        }
+      })
+      .catch((err) => {
+        console.error('Server Status Fetch Failed:', err);
+        setServerStatus('OFFLINE (CONN)');
+      });
   }, []);
 
   const handleKey = (key) => {
