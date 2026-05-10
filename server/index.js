@@ -2,7 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+let prisma;
+function getPrisma() {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
+}
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -28,7 +34,7 @@ app.post('/api/user', async (req, res) => {
     
     const baseVal = powerLevel === 'advanced' ? 150 : powerLevel === 'intermediate' ? 100 : 50;
 
-    const user = await prisma.user.create({
+    const user = await getPrisma().user.create({
       data: {
         saveCode,
         playerName,
@@ -66,7 +72,7 @@ app.post('/api/login', async (req, res) => {
     const { saveCode } = req.body;
     if (!saveCode) return res.status(400).json({ error: 'Save code required' });
 
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { saveCode: saveCode.toUpperCase() }
     });
 
@@ -84,7 +90,7 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/user/:saveCode', async (req, res) => {
   try {
     const { saveCode } = req.params;
-    const user = await prisma.user.findUnique({
+    const user = await getPrisma().user.findUnique({
       where: { saveCode: saveCode.toUpperCase() },
       include: {
         stats: true,
@@ -117,7 +123,7 @@ app.post('/api/sessions', async (req, res) => {
     const { userId, sessionDate, status, excuseReason, exercises, effortXp, level, stats } = req.body;
     
     // Create the session and nested exercises/sets
-    const session = await prisma.session.create({
+    const session = await getPrisma().session.create({
       data: {
         userId,
         sessionDate: new Date(sessionDate),
@@ -144,7 +150,7 @@ app.post('/api/sessions', async (req, res) => {
     });
 
     if (effortXp !== undefined && level !== undefined) {
-      await prisma.user.update({
+      await getPrisma().user.update({
         where: { id: userId },
         data: { effortXp, level }
       });
@@ -152,7 +158,7 @@ app.post('/api/sessions', async (req, res) => {
 
     if (stats) {
       for (const [muscle, powerLevel] of Object.entries(stats)) {
-        await prisma.userStat.updateMany({
+        await getPrisma().userStat.updateMany({
           where: { userId, muscleGroup: muscle },
           data: { powerLevel }
         });
@@ -171,7 +177,7 @@ app.post('/api/preferences', async (req, res) => {
   try {
     const { userId, type, name, isEnabled } = req.body;
     
-    const pref = await prisma.userPreference.upsert({
+    const pref = await getPrisma().userPreference.upsert({
       where: {
         userId_type_name: {
           userId,
