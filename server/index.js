@@ -35,36 +35,47 @@ apiRouter.post('/user', async (req, res) => {
     
     const baseVal = powerLevel === 'advanced' ? 150 : powerLevel === 'intermediate' ? 100 : 50;
 
-    const user = await getPrisma().user.create({
+    const db = getPrisma();
+    
+    // 1. Create User
+    const user = await db.user.create({
       data: {
         saveCode,
         playerName,
         avatarUrl: avatarUrl || '/avatar_front.png',
         startingClass: startingClass || 'unknown',
-        environment: environment || 'unknown',
-        stats: {
-          create: [
-            { muscleGroup: 'chest', powerLevel: baseVal },
-            { muscleGroup: 'back', powerLevel: baseVal },
-            { muscleGroup: 'legs', powerLevel: baseVal },
-            { muscleGroup: 'cardio', powerLevel: baseVal },
-            { muscleGroup: 'shoulders', powerLevel: baseVal },
-            { muscleGroup: 'biceps', powerLevel: baseVal },
-            { muscleGroup: 'triceps', powerLevel: baseVal },
-            { muscleGroup: 'core', powerLevel: baseVal }
-          ]
-        }
-      },
+        environment: environment || 'unknown'
+      }
+    });
+
+    // 2. Create Stats
+    await db.userStat.createMany({
+      data: [
+        { userId: user.id, muscleGroup: 'chest', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'back', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'legs', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'cardio', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'shoulders', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'biceps', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'triceps', powerLevel: baseVal },
+        { userId: user.id, muscleGroup: 'core', powerLevel: baseVal }
+      ]
+    });
+
+    // 3. Return full user
+    const finalUser = await db.user.findUnique({
+      where: { id: user.id },
       include: { stats: true }
     });
-    res.json(user);
+
+    res.json(finalUser);
   } catch (error) {
     console.error("ONBOARDING ERROR:", error);
     res.status(500).json({ 
       error: error.message, 
       code: error.code,
       meta: error.meta,
-      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      stack: error.stack?.split('\n').slice(0, 5).join('\n')
     });
   }
 });
