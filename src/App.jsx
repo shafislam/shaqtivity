@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { registerPlugin } from '@capacitor/core'
 
 const WidgetSync = registerPlugin('WidgetSync');
@@ -54,32 +55,9 @@ const DEFAULT_STATE = {
     shoulders: 85, biceps: 110, triceps: 95, core: 120
   },
   ghostStats: { chest: 120, back: 100, legs: 150, cardio: 20 },
-  history: (() => {
-    const dummyHistory = [];
-    const now = new Date();
-    const sessions = [
-      { daysAgo: 1, type: 'BASKETBALL', muscle: 'cardio', ex: 'BASKETBALL', sets: 1, others: [{ name: 'Cable Crossover', muscle: 'chest', sets: 4 }, { name: 'Dips', muscle: 'triceps', sets: 3 }] },
-      { daysAgo: 2, status: 'EXCUSE', reason: 'SICK MENTAL DAY', type: 'EXCUSE' },
-      { daysAgo: 3, type: 'LIFTING', muscle: 'legs', ex: 'Squat', sets: 5, others: [{ name: 'Romanian Deadlift', muscle: 'legs', sets: 4 }, { name: 'Plank', muscle: 'core', sets: 3 }] },
-      { daysAgo: 4, type: 'BOXING', muscle: 'cardio', ex: 'BOXING', sets: 1, others: [{ name: 'Pullups', muscle: 'back', sets: 4 }, { name: 'Barbell Curl', muscle: 'biceps', sets: 3 }] },
-      { daysAgo: 6, type: 'RUNNING', muscle: 'cardio', ex: 'RUNNING', sets: 1, others: [{ name: 'Overhead Press', muscle: 'shoulders', sets: 4 }, { name: 'Lateral Raises', muscle: 'shoulders', sets: 3 }] },
-      { daysAgo: 7, type: 'LIFTING', muscle: 'chest', ex: 'Bench Press', sets: 4, others: [{ name: 'Incline Press', muscle: 'chest', sets: 3 }, { name: 'Crunches', muscle: 'core', sets: 4 }] },
-      { daysAgo: 8, status: 'EXCUSE', reason: 'REST/RECOVERY', type: 'EXCUSE' },
-      { daysAgo: 9, type: 'CLIMBING', muscle: 'cardio', ex: 'CLIMBING', sets: 1, others: [{ name: 'Straight-Arm Pulldown', muscle: 'back', sets: 3 }, { name: 'Seated Row', muscle: 'back', sets: 3 }] },
-      { daysAgo: 10, type: 'LIFTING', muscle: 'legs', ex: 'Leg Press', sets: 4, others: [{ name: 'Leg Extensions', muscle: 'legs', sets: 4 }, { name: 'Calf Raises', muscle: 'legs', sets: 4 }] }
-    ];
-
-    sessions.forEach((s, idx) => {
-      const sessionDate = new Date(now);
-      sessionDate.setDate(now.getDate() - s.daysAgo);
-      dummyHistory.push(
-        s.status === 'EXCUSE' ? {
-          id: Date.now() - idx * 1000000,
-          date: sessionDate.toLocaleDateString(),
-  enabledActivities: NYC_ACTIVITIES.map(a => a.name),
-  enabledExercises: DEFAULT_EXERCISES,
   history: [],
-  stats: {}
+  enabledActivities: NYC_ACTIVITIES.map(a => a.name),
+  enabledExercises: DEFAULT_EXERCISES
 };
 
 export default function App() {
