@@ -59,8 +59,13 @@ apiRouter.post('/user', async (req, res) => {
     });
     res.json(user);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
+    console.error("ONBOARDING ERROR:", error);
+    res.status(500).json({ 
+      error: error.message, 
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    });
   }
 });
 
