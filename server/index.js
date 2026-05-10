@@ -15,6 +15,10 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+console.log("Server starting...");
+console.log("DATABASE_URL defined:", !!process.env.DATABASE_URL);
+console.log("Environment:", process.env.NODE_ENV);
+
 // Check health
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
