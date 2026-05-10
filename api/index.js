@@ -24,12 +24,12 @@ console.log("DATABASE_URL defined:", !!process.env.DATABASE_URL);
 console.log("Environment:", process.env.NODE_ENV);
 
 // Check health
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
 // Create User (Onboarding)
-app.post('/api/user', async (req, res) => {
+app.post('/user', async (req, res) => {
   try {
     const { playerName, startingClass, powerLevel, environment, avatarUrl } = req.body;
     
@@ -75,7 +75,7 @@ app.post('/api/user', async (req, res) => {
 });
 
 // Login with Save Code
-app.post('/api/login', async (req, res) => {
+app.post('/login', async (req, res) => {
   try {
     const { saveCode } = req.body;
     if (!saveCode) return res.status(400).json({ error: 'Save code required' });
@@ -95,7 +95,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Fetch specific user data
-app.get('/api/user/:saveCode', async (req, res) => {
+app.get('/user/:saveCode', async (req, res) => {
   try {
     const { saveCode } = req.params;
     const user = await getPrisma().user.findUnique({
@@ -126,7 +126,7 @@ app.get('/api/user/:saveCode', async (req, res) => {
 });
 
 // Create Session (Log Workout)
-app.post('/api/sessions', async (req, res) => {
+app.post('/sessions', async (req, res) => {
   try {
     const { userId, sessionDate, status, excuseReason, exercises, effortXp, level, stats } = req.body;
     
@@ -181,7 +181,7 @@ app.post('/api/sessions', async (req, res) => {
 });
 
 // Update User Preference (Settings)
-app.post('/api/preferences', async (req, res) => {
+app.post('/preferences', async (req, res) => {
   try {
     const { userId, type, name, isEnabled } = req.body;
     
