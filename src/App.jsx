@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { registerPlugin } from '@capacitor/core'
 
 const WidgetSync = registerPlugin('WidgetSync');
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = 'https://shaqtivity.vercel.app';
 
 const DEFAULT_EXERCISES = {
   chest: ['Cable Crossover', 'Dips', 'Decline Press', 'Flyes', 'Incline Press', 'Pec Deck', 'Bench Press', 'Pushups', 'DB Pullover', 'Fl Press'],
@@ -223,6 +223,13 @@ function LoginScreen({ onLoginSuccess, onStartNewGame }) {
   const [saveCode, setSaveCode] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [serverStatus, setServerStatus] = useState('CHECKING...');
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/health`)
+      .then(r => r.ok ? setServerStatus('ONLINE') : setServerStatus('OFFLINE'))
+      .catch(() => setServerStatus('OFFLINE'));
+  }, []);
 
   const handleKey = (key) => {
     if (saveCode.length < 6) setSaveCode(prev => prev + key);
@@ -264,6 +271,7 @@ function LoginScreen({ onLoginSuccess, onStartNewGame }) {
         <div style={{ textAlign: 'center', width: '100%', padding: '0 20px', marginBottom: '10px' }}>
           <div style={{ fontSize: '8vw', color: 'var(--accent-green)', textShadow: '4px 4px 0 #000', textAlign: 'center' }}>SHAQTIVITY</div>
           <div style={{ fontSize: '8px', color: 'var(--accent-orange)', marginTop: '5px' }}>RPG FITNESS TRACKER</div>
+          <div style={{ fontSize: '7px', color: serverStatus === 'ONLINE' ? 'var(--accent-green)' : 'red', marginTop: '5px' }}>SYSTEM: {serverStatus}</div>
         </div>
 
         <div className="panel" style={{ width: '100%', maxWidth: '300px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
