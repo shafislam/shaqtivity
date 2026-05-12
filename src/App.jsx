@@ -383,6 +383,7 @@ function mapDbUserToGameState(dbUser) {
     avatarUrl: dbUser.avatarUrl,
     level: dbUser.level,
     effortXp: dbUser.effortXp,
+    createdAt: dbUser.createdAt,
     stats,
     history,
     enabledActivities,
@@ -693,8 +694,7 @@ function Dashboard({ state }) {
             style={{
               width: '100%',
               objectFit: 'contain',
-              imageRendering: 'pixelated',
-              filter: 'drop-shadow(0 0 15px rgba(74, 222, 128, 0.4))'
+              imageRendering: 'pixelated'
             }}
           />
         </div>
@@ -722,14 +722,37 @@ function Dashboard({ state }) {
       <div className="panel" style={{ borderColor: 'var(--text-muted)' }}>
         <div className="panel-title" style={{ fontSize: '10px' }}>TODAY'S PLAN</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', paddingTop: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ fontSize: '32px' }}>🏀</div>
-            <div style={{ fontSize: '12px', lineHeight: '18px' }}>{getShorthand('BASKETBALL')}<br /><span className="text-muted" style={{ fontSize: '8px' }}>PICKUP GAMES</span></div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ fontSize: '32px' }}>🏋️</div>
-            <div style={{ fontSize: '12px', lineHeight: '18px' }}>{getShorthand('LIFTING')}<br /><span className="text-muted" style={{ fontSize: '8px' }}>PUSH DAY</span></div>
-          </div>
+          {(() => {
+            const todaySession = (state.history || []).find(h => {
+              const d = new Date(h.date);
+              const now = new Date();
+              return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+
+            if (!todaySession) {
+              return <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>NO PLAN FOR TODAY</div>;
+            }
+
+            if (todaySession.status === 'EXCUSE') {
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <div style={{ fontSize: '32px' }}>🛌</div>
+                  <div style={{ fontSize: '12px', lineHeight: '18px', color: 'var(--accent-orange)' }}>REST DAY<br /><span className="text-muted" style={{ fontSize: '8px' }}>{todaySession.reason}</span></div>
+                </div>
+              );
+            }
+
+            if (!todaySession.exercises || todaySession.exercises.length === 0) {
+              return <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>NO EXERCISES LOGGED</div>;
+            }
+
+            return todaySession.exercises.slice(0, 3).map((ex, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div style={{ fontSize: '20px' }}>{ex.muscle === 'cardio' ? '🏃' : '🏋️'}</div>
+                <div style={{ fontSize: '12px', lineHeight: '18px' }}>{getShorthand(ex.name.toUpperCase())}<br /><span className="text-muted" style={{ fontSize: '8px' }}>{ex.muscle.toUpperCase()}</span></div>
+              </div>
+            ));
+          })()}
         </div>
       </div>
     </div>
@@ -915,51 +938,7 @@ let globalIdCounter = 1000;
 function LoggerTab({ state, setGameState, syncWithBackend }) {
   const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
   const [popupTab, setPopupTab] = useState('lifts');
-  const [workout, setWorkout] = useState([
-    {
-      id: 'ex1', exercise: 'Bench Press', muscle: 'chest',
-      sets: [
-        { id: 's1', reps: 10, targetReps: 10, weight: 135, completed: false },
-        { id: 's2', reps: 8, targetReps: 8, weight: 155, completed: false },
-        { id: 's3', reps: 6, targetReps: 6, weight: 165, completed: false }
-      ]
-    },
-    {
-      id: 'ex2', exercise: 'Incline DB Press', muscle: 'chest',
-      sets: [
-        { id: 's4', reps: 10, targetReps: 10, weight: 60, completed: false },
-        { id: 's2_2', reps: 8, targetReps: 8, weight: 155, completed: false }
-      ]
-    },
-    {
-      id: 'ex3', exercise: 'Overhead Press', muscle: 'shoulders',
-      sets: [
-        { id: 's3_2', reps: 10, targetReps: 10, weight: 95, completed: false },
-        { id: 's4_2', reps: 8, targetReps: 8, weight: 105, completed: false }
-      ]
-    },
-    {
-      id: 'ex4', exercise: 'Tricep Pushdown', muscle: 'triceps',
-      sets: [
-        { id: 's5', reps: 12, targetReps: 12, weight: 50, completed: false },
-        { id: 's6', reps: 12, targetReps: 12, weight: 60, completed: false }
-      ]
-    },
-    {
-      id: 'ex5', exercise: 'Crunches', muscle: 'core',
-      sets: [
-        { id: 's7', reps: 20, targetReps: 20, completed: false },
-        { id: 's8', reps: 20, targetReps: 20, completed: false },
-        { id: 's9', reps: 20, targetReps: 20, completed: false }
-      ]
-    },
-    {
-      id: 'ex6', exercise: 'Treadmill', muscle: 'cardio',
-      sets: [
-        { id: 's10', minutes: 20, targetMinutes: 20, completed: false }
-      ]
-    }
-  ]);
+  const [workout, setWorkout] = useState([]);
 
   const toggleSet = (exId, setId) => {
     setWorkout(prev => prev.map(ex => {
@@ -1266,56 +1245,107 @@ function LoggerTab({ state, setGameState, syncWithBackend }) {
 
 function CalendarTab({ state }) {
   const ObjectKeys = Object.keys;
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  
   const [plannerOpen, setPlannerOpen] = useState(false);
   const [excuseOpen, setExcuseOpen] = useState(false);
   const [excuseDays, setExcuseDays] = useState(1);
   const [activeExcuse, setActiveExcuse] = useState(null);
   const [tempExcuseType, setTempExcuseType] = useState(null);
 
-  const [dailyPlan, setDailyPlan] = useState([
-    { id: 1, type: 'Activity Slot 1', selected: 'BASKETBALL', subType: 'Activity', daysSince: 4 },
-    { id: 2, type: 'Activity Slot 2', selected: 'PUSH DAY', subType: 'Lift', daysSince: 1 }
-  ]);
-
-  const defaultSuggested = [
-    { id: 1, type: 'Activity Slot 1', selected: 'BASKETBALL', subType: 'Activity', daysSince: 4 },
-    { id: 2, type: 'Activity Slot 2', selected: 'PUSH DAY', subType: 'Lift', daysSince: 1 }
-  ];
+  const [dailyPlan, setDailyPlan] = useState([]);
 
   const excuseTypes = [
-    { name: 'SICK', icon: '🤒', image: '/excuse_sick_16bit.png', lastUsed: 12 },
-    { name: 'VACATION', icon: '🏖️', image: '/excuse_vacation_16bit.png', lastUsed: 45 },
-    { name: 'REST', icon: '😴', image: '/excuse_rest_16bit.png', lastUsed: 3 },
-    { name: 'INJURY', icon: '🤕', image: '/excuse_injury_16bit.png', lastUsed: 120 }
-  ];
+    { name: 'SICK', icon: '🤒', image: '/excuse_sick_16bit.png' },
+    { name: 'VACATION', icon: '🏖️', image: '/excuse_vacation_16bit.png' },
+    { name: 'REST', icon: '😴', image: '/excuse_rest_16bit.png' },
+    { name: 'INJURY', icon: '🤕', image: '/excuse_injury_16bit.png' }
+  ].map(excuse => {
+    let lastUsed = null;
+    const historyWithExcuse = state.history.filter(h => h.status === 'EXCUSE' && h.reason === excuse.name);
+    if (historyWithExcuse.length > 0) {
+      const latest = historyWithExcuse.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b);
+      lastUsed = Math.floor((Date.now() - new Date(latest.date).getTime()) / (1000 * 3600 * 24));
+    }
+    return { ...excuse, lastUsed };
+  });
 
   const availableActivities = NYC_ACTIVITIES.filter(a => state.enabledActivities.includes(a.name));
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const today = new Date();
+  const isSelectedFuture = new Date(year, month, selectedDay).getTime() > new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
 
   return (
     <>
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: '10px', overflow: 'hidden', paddingTop: '10px' }}>
         <div className="panel" style={{ padding: '16px 12px 12px 12px' }}>
-          <div className="panel-title" style={{ fontSize: '10px' }}>{new Date().toLocaleString('default', { month: 'long' }).toUpperCase()}</div>
-          <div className="panel-title" style={{ fontSize: '14px', top: '-11px', left: 'auto', right: '10px', cursor: 'pointer', display: 'flex', gap: '12px' }}>
-            <span>◀</span>
-            <span>▶</span>
+          <div className="panel-title" style={{ fontSize: '10px' }}>{currentDate.toLocaleString('default', { month: 'long' }).toUpperCase()}</div>
+          <div className="panel-title" style={{ fontSize: '14px', top: '-11px', left: 'auto', right: '10px', display: 'flex', gap: '12px' }}>
+            <span onClick={prevMonth} style={{ cursor: 'pointer' }}>◀</span>
+            <span onClick={nextMonth} style={{ cursor: 'pointer' }}>▶</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, idx) => <div key={d + idx} className="text-muted text-center" style={{ fontSize: '6px' }}>{d}</div>)}
             {days.map(d => {
-              const today = new Date().getDate();
-              const hasData = state.history.some(h => {
+              const iterDate = new Date(year, month, d);
+              const isToday = iterDate.getTime() === new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+              const isFuture = iterDate.getTime() > today.getTime();
+              
+              const historyForDay = state.history.find(h => {
                 const hDate = new Date(h.date);
-                return hDate.getDate() === d && hDate.getMonth() === new Date().getMonth();
+                return hDate.getDate() === d && hDate.getMonth() === month && hDate.getFullYear() === year;
               });
+
+              let bgColor = 'transparent';
+              let borderColor = '#555';
+              let textColor = 'white';
+
+              if (selectedDay === d) {
+                borderColor = 'white';
+              }
+
+              if (isToday) {
+                bgColor = 'var(--accent-orange)';
+                textColor = 'black';
+              } else if (historyForDay) {
+                if (historyForDay.status === 'EXCUSE') {
+                  bgColor = 'rgba(255, 0, 0, 0.2)';
+                  textColor = '#ff6666';
+                } else {
+                  bgColor = 'var(--accent-green)';
+                  textColor = 'black';
+                }
+              } else if (!isFuture && state.createdAt && iterDate.getTime() >= new Date(state.createdAt).getTime()) {
+                // Past day, since account creation, no activity
+                bgColor = 'rgba(255, 0, 0, 0.2)';
+                textColor = '#ff6666';
+              } else if (!isFuture && !state.createdAt) {
+                // Fallback if no createdAt
+                bgColor = 'rgba(255, 0, 0, 0.2)';
+                textColor = '#ff6666';
+              }
+
               return (
-                <div key={d} className="text-center" style={{
-                  border: '2px solid #555', padding: '6px 0', fontSize: '8px',
-                  color: d === today ? 'black' : hasData ? 'black' : 'white', cursor: 'pointer',
-                  backgroundColor: d === today ? 'var(--accent-orange)' : hasData ? 'var(--accent-green)' : d < today ? 'var(--btn-bg)' : 'transparent',
-                  boxShadow: d === today ? '2px 2px 0 var(--shadow-color)' : 'none'
-                }}>{d}</div>
+                <div 
+                  key={d} 
+                  onClick={() => setSelectedDay(d)}
+                  className="text-center" 
+                  style={{
+                    border: `2px solid ${borderColor}`, padding: '6px 0', fontSize: '8px',
+                    color: textColor, cursor: 'pointer',
+                    backgroundColor: bgColor,
+                    boxShadow: isToday ? '2px 2px 0 var(--shadow-color)' : 'none'
+                  }}
+                >{d}</div>
               )
             })}
           </div>
@@ -1323,11 +1353,11 @@ function CalendarTab({ state }) {
 
         <div className="panel" style={{ flex: 1, borderColor: 'var(--accent-orange)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <div className="text-orange" style={{ fontSize: '10px' }}>{new Date().toLocaleString('default', { weekday: 'long' }).toUpperCase()}</div>
+            <div className="text-orange" style={{ fontSize: '10px' }}>{new Date(year, month, selectedDay).toLocaleString('default', { weekday: 'long' }).toUpperCase()}</div>
             <div style={{ display: 'flex', gap: '6px' }}>
               {!activeExcuse && (
                 <>
-                  <button onClick={() => setExcuseOpen(true)} className="retro-btn" style={{ padding: '4px', width: 'auto', fontSize: '8px', borderColor: 'var(--text-muted)' }}>MAKE EXCUSE</button>
+                  <button onClick={() => setExcuseOpen(true)} disabled={isSelectedFuture} className="retro-btn" style={{ padding: '4px', width: 'auto', fontSize: '8px', borderColor: 'var(--text-muted)', opacity: isSelectedFuture ? 0.3 : 1 }}>MAKE EXCUSE</button>
                   <button onClick={() => setPlannerOpen(true)} className="retro-btn" style={{ padding: '4px', width: 'auto', fontSize: '8px', borderColor: 'var(--accent-orange)' }}>ADD ACTIVITY</button>
                 </>
               )}
@@ -1340,21 +1370,21 @@ function CalendarTab({ state }) {
                   <img
                     src={activeExcuse.image}
                     alt={activeExcuse.name}
-                    onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }}
                     style={{ width: '100%', imageRendering: 'pixelated' }}
                   />
-                  <div style={{ fontSize: '32px', display: 'none' }}>{activeExcuse.icon}</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '10px', color: 'white' }}>{activeExcuse.name}</div>
-                  <div style={{ fontSize: '5px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                    LAST USED: {activeExcuse.lastUsed} DAYS AGO
-                  </div>
+                  {activeExcuse.lastUsed > 0 && (
+                    <div style={{ fontSize: '5px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                      LAST USED: {activeExcuse.lastUsed} DAYS AGO
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => {
                     setActiveExcuse(null);
-                    setDailyPlan(defaultSuggested);
+                    setDailyPlan([]);
                   }}
                   className="retro-btn"
                   style={{ padding: '4px 8px', fontSize: '8px', width: 'auto' }}
@@ -1363,25 +1393,31 @@ function CalendarTab({ state }) {
                 </button>
               </div>
             ) : (
-              dailyPlan.map(slot => (
-                <div key={slot.id} style={{ position: 'relative', display: 'flex', gap: '12px', alignItems: 'center', backgroundColor: 'var(--btn-bg)', border: '2px solid var(--panel-border)', padding: '12px', boxShadow: '2px 2px 0 var(--shadow-color)' }}>
-                  <div style={{ fontSize: '24px' }}>
-                    {(slot.selected === 'PUSH DAY' || slot.subType === 'Lift') ? '🏋️' : (availableActivities.find(a => a.name === slot.selected)?.icon || '⚪')}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '10px', color: 'white' }}>{slot.selected.toUpperCase()}</div>
-                    <div style={{ fontSize: '5px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                      LAST: {slot.daysSince} DAYS AGO
+              dailyPlan.length === 0 ? (
+                <div style={{ fontSize: '8px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '20px' }}>NO ACTIVITIES PLANNED</div>
+              ) : (
+                dailyPlan.map(slot => (
+                  <div key={slot.id} style={{ position: 'relative', display: 'flex', gap: '12px', alignItems: 'center', backgroundColor: 'var(--btn-bg)', border: '2px solid var(--panel-border)', padding: '12px', boxShadow: '2px 2px 0 var(--shadow-color)' }}>
+                    <div style={{ fontSize: '24px' }}>
+                      {(slot.selected === 'PUSH DAY' || slot.subType === 'Lift') ? '🏋️' : (availableActivities.find(a => a.name === slot.selected)?.icon || '⚪')}
                     </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '10px', color: 'white' }}>{slot.selected.toUpperCase()}</div>
+                      {slot.daysSince !== null && (
+                        <div style={{ fontSize: '5px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                          LAST: {slot.daysSince} DAYS AGO
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setDailyPlan(prev => prev.filter(p => p.id !== slot.id))}
+                      style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', padding: '4px' }}
+                    >
+                      X
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setDailyPlan(prev => prev.filter(p => p.id !== slot.id))}
-                    style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', padding: '4px' }}
-                  >
-                    X
-                  </button>
-                </div>
-              ))
+                ))
+              )
             )}
           </div>
         </div>
@@ -1409,7 +1445,15 @@ function CalendarTab({ state }) {
                         onClick={() => {
                           const displayLabel = (name === 'LIFTING') ? 'PUSH DAY' : name;
                           const subType = (name === 'LIFTING') ? 'Lift' : 'Activity';
-                          setDailyPlan(prev => [...prev, { id: Date.now(), type: 'Added Activity', selected: displayLabel, subType, daysSince: Math.floor(Math.random() * 5) + 1 }]);
+                          
+                          let daysSince = null;
+                          const sessionsWithAct = state.history.filter(h => (h.exercises || []).some(e => e.name.toUpperCase() === name.toUpperCase()));
+                          if (sessionsWithAct.length > 0) {
+                            const latest = sessionsWithAct.reduce((a, b) => new Date(a.date) > new Date(b.date) ? a : b);
+                            daysSince = Math.floor((Date.now() - new Date(latest.date).getTime()) / (1000 * 3600 * 24));
+                          }
+                          
+                          setDailyPlan(prev => [...prev, { id: Date.now(), type: 'Added Activity', selected: displayLabel, subType, daysSince }]);
                           setPlannerOpen(false);
                         }}
                         className="retro-btn"
@@ -1544,35 +1588,32 @@ function StatsTab({ state }) {
               <div className="panel-title" style={{ fontSize: '10px', paddingBottom: '6px' }}>TRENDS</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap: '35px', columnGap: '20px', flex: 1, alignContent: 'center', justifyItems: 'center' }}>
                 {allMuscleGroups.map(m => {
-                  const hasRecent = (state.history || []).some(h => {
-                    const daysAgo = (Date.now() - new Date(h.date).getTime()) / (1000 * 3600 * 24);
-                    return daysAgo <= 4 && (h.exercises || []).some(e => e.muscle === m);
-                  });
+                  let trend = 'none';
+                  const sessionsWithMuscle = (state.history || []).filter(h => (h.exercises || []).some(e => e.muscle === m));
+                  if (sessionsWithMuscle.length > 0) {
+                    const latestSession = sessionsWithMuscle.reduce((latest, curr) => new Date(curr.date) > new Date(latest.date) ? curr : latest);
+                    const daysAgo = (Date.now() - new Date(latestSession.date).getTime()) / (1000 * 3600 * 24);
+                    if (daysAgo <= 2) {
+                      trend = 'up';
+                    } else {
+                      trend = 'down';
+                    }
+                  }
+
                   return (
                     <div key={m} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <div style={{ fontSize: '36px', color: 'white', textShadow: '3px 3px 0 #000' }}>{state.stats[m] || 50}</div>
-                        <div style={{ fontSize: '36px', color: hasRecent ? 'var(--accent-green)' : 'red', textShadow: '2px 2px 0 #000' }}>
-                          {hasRecent ? '▲' : '▼'}
-                        </div>
+                        {trend !== 'none' && (
+                          <div style={{ fontSize: '36px', color: trend === 'up' ? 'var(--accent-green)' : 'red', textShadow: '2px 2px 0 #000' }}>
+                            {trend === 'up' ? '▲' : '▼'}
+                          </div>
+                        )}
                       </div>
                       <div style={{ fontSize: '12px', color: MUSCLE_COLORS[m] }}>{m.toUpperCase()}</div>
                     </div>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="panel" style={{ flexShrink: 0, padding: '12px 15px' }}>
-              <div className="panel-title" style={{ fontSize: '10px', paddingBottom: '6px' }}>CURRENT STREAK</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10px' }}>
-                  <span style={{ fontSize: '14px' }}>🥈</span>
-                  <span>20 DAYS</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '8px' }}>
-                  <span className="text-yellow">BEST: 84D</span>
-                </div>
               </div>
             </div>
           </div>
@@ -1603,7 +1644,12 @@ function StatsTab({ state }) {
         );
 
       case 'History':
-        const last14Days = Array.from({ length: 14 }, (_, i) => {
+        let daysToRender = 14;
+        if (state.createdAt) {
+          const daysSinceStart = Math.ceil((Date.now() - new Date(state.createdAt).getTime()) / (1000 * 3600 * 24));
+          daysToRender = Math.max(1, Math.min(14, daysSinceStart));
+        }
+        const last14Days = Array.from({ length: daysToRender }, (_, i) => {
           const d = new Date();
           d.setDate(d.getDate() - i);
           return d.toLocaleDateString();
